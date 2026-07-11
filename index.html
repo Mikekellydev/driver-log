@@ -823,11 +823,13 @@ function escapeHTML(text) {
         .replace(/'/g, "&#039;");
 }
 
-    window.addEventListener('DOMContentLoaded', loadState);
-    document.getElementById('shiftDate').addEventListener('change', (e) => {
-        state.date = e.target.value;
-        saveState();
-    });
+// Global page initialization and structural listeners
+window.addEventListener('DOMContentLoaded', loadState);
+
+document.getElementById('shiftDate').addEventListener('change', (e) => {
+    state.date = e.target.value;
+    saveState();
+});
 </script>
 
 </body>
