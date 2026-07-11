@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Palmer Trucks Daily Driver Log</title>
+    <!-- Apple Web App Meta Tags to make it save like a real home screen app -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Driver Log">
@@ -18,6 +19,7 @@
             --success: #10B981;
             --danger: #EF4444;
             --maps-blue: #2563EB;
+            --warning: #F59E0B;
         }
 
         * {
@@ -120,6 +122,7 @@
         .btn-success { background: var(--success); }
         .btn-danger { background: var(--danger); }
         .btn-secondary { background: #64748B; }
+        .btn-warning { background: var(--warning); color: var(--white); }
 
         .time-btn-group {
             display: grid;
@@ -159,7 +162,6 @@
             overflow: hidden;
         }
 
-        /* Sort Handling Column */
         .sort-handle {
             display: flex;
             flex-direction: column;
@@ -191,7 +193,7 @@
         .stop-content {
             padding: 10px;
             flex-grow: 1;
-            padding-right: 35px; /* Leave space for delete button */
+            padding-right: 35px;
         }
 
         .stop-meta {
@@ -233,6 +235,16 @@
             gap: 10px;
             margin-top: 5px;
         }
+
+        /* Favorites Drawer UI */
+        .favorites-drawer {
+            display: none;
+            background: #F1F5F9;
+            border: 1px dashed #94A3B8;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -240,6 +252,7 @@
 <div class="container">
     <h1>PALMER TRUCKS — DRIVER ROUTE TRACKER</h1>
 
+    <!-- Shift Config Card -->
     <div class="card">
         <div class="grid-2">
             <div>
@@ -261,14 +274,32 @@
         </div>
     </div>
 
+    <!-- Stop Entry Card -->
     <div class="card">
         <h2>Log / Stage a Stop <span id="formRunBadge" class="run-badge">Run 1</span></h2>
         
+        <!-- Favorites Block -->
+        <div style="margin-bottom: 12px; display: grid; grid-template-columns: 1fr auto; gap: 8px;">
+            <div>
+                <select id="favDropdown" onchange="applyFavorite(this.value)">
+                    <option value="">⚡ Quick Select Favorite...</option>
+                </select>
+            </div>
+            <button class="btn btn-warning" id="toggleFavDrawer" style="padding: 10px; font-size: 0.85rem;">⭐️ Edit Favs</button>
+        </div>
+
+        <!-- Favorites Editor Drawer (Hidden by default) -->
+        <div id="favDrawer" class="favorites-drawer">
+            <h4 style="font-size:0.85rem; color:var(--navy-dark); margin-bottom:5px;">Add Current Form to Favorites:</h4>
+            <button class="btn btn-success" style="padding:6px; font-size:0.8rem; margin-bottom:10px;" onclick="saveCurrentAsFavorite()">Save Current Inputs as Favorite</button>
+            <div id="favManageList" style="max-height:100px; overflow-y:auto; font-size:0.75rem;"></div>
+        </div>
+        
         <label>Stop Description</label>
-        <input type="text" id="stopDesc" placeholder="e.g., • Selking International or • Departure">
+        <input type="text" id="stopDesc" placeholder="e.g., • Selking International">
         
         <label>Location / Address</label>
-        <input type="text" id="stopLoc" placeholder="e.g., 5502 Mason Drive or Hub">
+        <input type="text" id="stopLoc" placeholder="e.g., Goshen Road or Hub">
 
         <div class="grid-2">
             <div class="time-btn-group">
@@ -288,7 +319,7 @@
         </div>
 
         <label>Route / Operational Notes</label>
-        <textarea id="stopNotes" rows="2" placeholder="Detours, forklift wait times, traffic..."></textarea>
+        <textarea id="stopNotes" rows="2" placeholder="Detours, forklift wait times..."></textarea>
 
         <div class="grid-2">
             <button class="btn btn-secondary" id="btnStageStop">📋 Stage Planned</button>
@@ -296,6 +327,7 @@
         </div>
     </div>
 
+    <!-- Live Preview Display Lists -->
     <div class="card">
         <h2>Planned / Pending Stops (Use arrows to reorder)</h2>
         <div id="plannedStopsList"></div>
@@ -306,6 +338,7 @@
         <div id="completedStopsList"></div>
     </div>
 
+    <!-- Final Wrap-up Controls -->
     <div class="card" style="border: 2px solid var(--success);">
         <h2>Shift Wrap-Up Actions</h2>
         <div class="grid-2">
@@ -341,6 +374,9 @@
         completedStops: []
     };
 
+    // Favorites decoupled list (persists across days)
+    let favorites = [];
+
     document.getElementById('shiftDate').value = state.date;
 
     function loadState() {
@@ -360,11 +396,83 @@
                 }
             }
         }
+
+        // Load Favorites
+        const savedFavs = localStorage.getItem('palmer_driver_favorites');
+        if (savedFavs) {
+            favorites = JSON.parse(savedFavs);
+        } else {
+            // Default seed values to help you test immediately
+            favorites = [
+                { desc: "• Selking International", loc: "Goshen Road" },
+                { desc: "• Palmer Leasing Group", loc: "Production Road" },
+                { desc: "• Return to Palmer Trucks", loc: "Hub" }
+            ];
+            localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
+        }
+
         updateUI();
+        updateFavoritesUI();
     }
 
     function saveState() {
         localStorage.setItem('palmer_driver_log_state', JSON.stringify(state));
+    }
+
+    // Toggle Favorites Editor Panel
+    document.getElementById('toggleFavDrawer').addEventListener('click', () => {
+        const drawer = document.getElementById('favDrawer');
+        drawer.style.display = drawer.style.display === 'block' ? 'none' : 'block';
+    });
+
+    function saveCurrentAsFavorite() {
+        const desc = document.getElementById('stopDesc').value.trim();
+        const loc = document.getElementById('stopLoc').value.trim();
+        if (!desc) return alert("Type a Description into the input box first to save it as a favorite.");
+        
+        // Prevent duplicate descriptions
+        favorites = favorites.filter(f => f.desc !== desc);
+        favorites.push({ desc: desc, loc: loc });
+        localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
+        updateFavoritesUI();
+        alert("Saved to your permanent local favorites list!");
+    }
+
+    function removeFavorite(idx) {
+        favorites.splice(idx, 1);
+        localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
+        updateFavoritesUI();
+    }
+
+    function updateFavoritesUI() {
+        const dropdown = document.getElementById('favDropdown');
+        dropdown.innerHTML = '<option value="">⚡ Quick Select Favorite...</option>';
+        
+        const manageList = document.getElementById('favManageList');
+        manageList.innerHTML = '';
+
+        favorites.forEach((fav, idx) => {
+            // Fill quick selection dropdown
+            let option = document.createElement('option');
+            option.value = idx;
+            option.textContent = `${fav.desc.replace('• ', '')} (${fav.loc || 'No Address'})`;
+            dropdown.appendChild(option);
+
+            // Fill manager list
+            manageList.innerHTML += `
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; background:#FFF; padding:4px; border-radius:4px;">
+                    <span>${fav.desc}</span>
+                    <span style="color:var(--danger); font-weight:bold; cursor:pointer;" onclick="removeFavorite(${idx})">Delete</span>
+                </div>`;
+        });
+    }
+
+    function applyFavorite(idx) {
+        if (idx === "") return;
+        const fav = favorites[idx];
+        document.getElementById('stopDesc').value = fav.desc;
+        document.getElementById('stopLoc').value = fav.loc;
+        document.getElementById('favDropdown').value = ""; // Clear selection placeholder
     }
 
     function captureTime(fieldId) {
@@ -377,7 +485,6 @@
         document.getElementById(fieldId).value = `${hours}:${minutes} ${ampm}`;
     }
 
-    // Helper to generate explicit maps link structure
     function getMapsLink(locationText) {
         if (!locationText || locationText === "—" || locationText.toLowerCase() === "hub") {
             return locationText || "—";
@@ -386,7 +493,6 @@
         return `<a class="maps-link" href="https://www.google.com/maps/search/?api=1&query=${encoded}" target="_blank">📍 ${locationText}</a>`;
     }
 
-    // Move elements inside arrays to execute sorting re-orders
     movePlanned = function(index, direction) {
         if (direction === 'up' && index > 0) {
             let temp = state.plannedStops[index];
@@ -405,7 +511,6 @@
         document.getElementById('activeRunDisplay').textContent = state.activeRun;
         document.getElementById('formRunBadge').textContent = `Run ${state.activeRun}`;
         
-        // Render Planned Stops with Left-Border Navigation Control
         const plannedDiv = document.getElementById('plannedStopsList');
         plannedDiv.innerHTML = '';
         state.plannedStops.forEach((stop, idx) => {
@@ -424,7 +529,6 @@
         });
         if(state.plannedStops.length === 0) plannedDiv.innerHTML = '<p style="color:#94A3B8; font-size:0.85rem;">No planned stops set.</p>';
 
-        // Render Completed Logs
         const completedDiv = document.getElementById('completedStopsList');
         completedDiv.innerHTML = '';
         state.completedStops.forEach((stop, idx) => {
@@ -443,7 +547,6 @@
         if(state.completedStops.length === 0) completedDiv.innerHTML = '<p style="color:#94A3B8; font-size:0.85rem;">No entries logged yet.</p>';
     }
 
-    // Input actions
     document.getElementById('btnStageStop').addEventListener('click', () => {
         const desc = document.getElementById('stopDesc').value.trim();
         const loc = document.getElementById('stopLoc').value.trim();
@@ -477,7 +580,6 @@
             notes: notes
         });
 
-        // Remove from planned array if descriptions cross-match
         state.plannedStops = state.plannedStops.filter(item => !(item.description === desc && item.runNumber === state.activeRun));
 
         clearForm();
@@ -542,7 +644,6 @@
         }
     });
 
-    // CSV Generator
     document.getElementById('btnExportCSV').addEventListener('click', () => {
         if(state.completedStops.length === 0) return alert("No active log entries to export yet.");
         
