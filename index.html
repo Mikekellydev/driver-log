@@ -374,7 +374,6 @@
         completedStops: []
     };
 
-    // Favorites decoupled list with your extracted historical logs baked in
     let favorites = [];
 
     document.getElementById('shiftDate').value = state.date;
@@ -397,7 +396,6 @@
             }
         }
 
-        // Permanent Favorites List Loader & Seed Library mapping your history
         const savedFavs = localStorage.getItem('palmer_driver_favorites');
         if (savedFavs) {
             favorites = JSON.parse(savedFavs);
@@ -671,7 +669,7 @@
         let csvLines = [];
         csvLines.push("Daily Driver Report,DAILY DRIVER REPORT — PALMER TRUCKS,,,,");
         csvLines.push(`,To:,Parts Manager,,Date:,${escapeCSV(formattedDate)}`);
-        csvLines.push(`,From:,Delivery Driver,,Status:,Completed`);
+        csvLines.push(`,From:,Michael Kelly (Delivery Driver),,Status:,Completed`);
         csvLines.push("Run / Stop Description,Location / Address,Arrival / Action,Departure Time,Route / Operational Notes");
 
         let uniqueRuns = [...new Set(state.completedStops.map(s => s.runNumber))].sort((a,b)=>a-b);
