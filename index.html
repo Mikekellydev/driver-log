@@ -400,6 +400,7 @@
         if (savedFavs) {
             favorites = JSON.parse(savedFavs);
         } else {
+            // Merged and complete favorites compiled from both July 9th and July 10th shift manifests
             favorites = [
               { "desc": "• Ace Radiator", "loc": "Local" },
               { "desc": "• Blackstone Laboratories", "loc": "Pettit Avenue" },
@@ -411,18 +412,22 @@
               { "desc": "• Hub Turnaround Drop", "loc": "Hub" },
               { "desc": "• Hudson Trucking", "loc": "New Haven" },
               { "desc": "• J&B Sales", "loc": "Jericho Road, Ohio" },
-              { "desc": "• Jerry W. Belling Trucking", "loc": "12609 India" },
+              { "desc": "• Jerry W. Belling Trucking", "loc": "12609 Indianapolis Road" },
               { "desc": "• Journey Trucking", "loc": "Local Delivery" },
               { "desc": "• Kip's K&N Concrete", "loc": "5502 Mason Drive" },
+              { "desc": "• Lois & Jay Yoder", "loc": "11436 Rosedale Road" },
               { "desc": "• McMahon's Best One Tire", "loc": "6921 State Road 930" },
               { "desc": "• Palmer Leasing Group", "loc": "Production Road" },
               { "desc": "• Parker Hannifin", "loc": "Goshen Road" },
+              { "desc": "• Parker Hannifin", "loc": "Opportunity Drive" },
               { "desc": "• Penske", "loc": "3602 Lima Road" },
+              { "desc": "• Polar King", "loc": "4410 New Haven Avenue" },
               { "desc": "• Return to Palmer Trucks", "loc": "Hub" },
               { "desc": "• Riley", "loc": "7020 Ardmore Avenue" },
               { "desc": "• Ruble Truck Sales", "loc": "Monroeville (\"The Mall\")" },
               { "desc": "• Selking International", "loc": "Goshen Road" },
-              { "desc": "• Stoops Freightliner", "loc": "New Haven Junction" }
+              { "desc": "• Stoops Freightliner", "loc": "New Haven Junction" },
+              { "desc": "• Valley Trucks", "loc": "North Side" }
             ];
             localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
         }
