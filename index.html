@@ -292,7 +292,7 @@
         <div id="favDrawer" class="favorites-drawer">
             <h4 style="font-size:0.85rem; color:var(--navy-dark); margin-bottom:5px;">Add Current Form to Favorites:</h4>
             <button class="btn btn-success" style="padding:6px; font-size:0.8rem; margin-bottom:10px;" onclick="saveCurrentAsFavorite()">Save Current Inputs as Favorite</button>
-            <div id="favManageList" style="max-height:100px; overflow-y:auto; font-size:0.75rem;"></div>
+            <div id="favManageList" style="max-height:150px; overflow-y:auto; font-size:0.75rem;"></div>
         </div>
         
         <label>Stop Description</label>
@@ -374,7 +374,7 @@
         completedStops: []
     };
 
-    // Favorites decoupled list (persists across days)
+    // Favorites decoupled list with your extracted historical logs baked in
     let favorites = [];
 
     document.getElementById('shiftDate').value = state.date;
@@ -397,16 +397,34 @@
             }
         }
 
-        // Load Favorites
+        // Permanent Favorites List Loader & Seed Library mapping your history
         const savedFavs = localStorage.getItem('palmer_driver_favorites');
         if (savedFavs) {
             favorites = JSON.parse(savedFavs);
         } else {
-            // Default seed values to help you test immediately
             favorites = [
-                { desc: "• Selking International", loc: "Goshen Road" },
-                { desc: "• Palmer Leasing Group", loc: "Production Road" },
-                { desc: "• Return to Palmer Trucks", loc: "Hub" }
+              { "desc": "• Ace Radiator", "loc": "Local" },
+              { "desc": "• Blackstone Laboratories", "loc": "Pettit Avenue" },
+              { "desc": "• CMP (Certified Maint.)", "loc": "Lima Rd (by Costco)" },
+              { "desc": "• Clifford Trucking", "loc": "Local Fleet" },
+              { "desc": "• Departure from Hub", "loc": "Hub" },
+              { "desc": "• FedEx Drop Point", "loc": "Local Drop" },
+              { "desc": "• H&H Repair", "loc": "1633 Lincoln Highway East" },
+              { "desc": "• Hub Turnaround Drop", "loc": "Hub" },
+              { "desc": "• Hudson Trucking", "loc": "New Haven" },
+              { "desc": "• J&B Sales", "loc": "Jericho Road, Ohio" },
+              { "desc": "• Jerry W. Belling Trucking", "loc": "12609 India" },
+              { "desc": "• Journey Trucking", "loc": "Local Delivery" },
+              { "desc": "• Kip's K&N Concrete", "loc": "5502 Mason Drive" },
+              { "desc": "• McMahon's Best One Tire", "loc": "6921 State Road 930" },
+              { "desc": "• Palmer Leasing Group", "loc": "Production Road" },
+              { "desc": "• Parker Hannifin", "loc": "Goshen Road" },
+              { "desc": "• Penske", "loc": "3602 Lima Road" },
+              { "desc": "• Return to Palmer Trucks", "loc": "Hub" },
+              { "desc": "• Riley", "loc": "7020 Ardmore Avenue" },
+              { "desc": "• Ruble Truck Sales", "loc": "Monroeville (\"The Mall\")" },
+              { "desc": "• Selking International", "loc": "Goshen Road" },
+              { "desc": "• Stoops Freightliner", "loc": "New Haven Junction" }
             ];
             localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
         }
@@ -419,7 +437,6 @@
         localStorage.setItem('palmer_driver_log_state', JSON.stringify(state));
     }
 
-    // Toggle Favorites Editor Panel
     document.getElementById('toggleFavDrawer').addEventListener('click', () => {
         const drawer = document.getElementById('favDrawer');
         drawer.style.display = drawer.style.display === 'block' ? 'none' : 'block';
@@ -430,7 +447,6 @@
         const loc = document.getElementById('stopLoc').value.trim();
         if (!desc) return alert("Type a Description into the input box first to save it as a favorite.");
         
-        // Prevent duplicate descriptions
         favorites = favorites.filter(f => f.desc !== desc);
         favorites.push({ desc: desc, loc: loc });
         localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
@@ -452,17 +468,15 @@
         manageList.innerHTML = '';
 
         favorites.forEach((fav, idx) => {
-            // Fill quick selection dropdown
             let option = document.createElement('option');
             option.value = idx;
             option.textContent = `${fav.desc.replace('• ', '')} (${fav.loc || 'No Address'})`;
             dropdown.appendChild(option);
 
-            // Fill manager list
             manageList.innerHTML += `
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px; background:#FFF; padding:4px; border-radius:4px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; background:#FFF; padding:6px; border:1px solid #E2E8F0; border-radius:4px;">
                     <span>${fav.desc}</span>
-                    <span style="color:var(--danger); font-weight:bold; cursor:pointer;" onclick="removeFavorite(${idx})">Delete</span>
+                    <span style="color:var(--danger); font-weight:bold; cursor:pointer; padding:0 4px;" onclick="removeFavorite(${idx})">Delete</span>
                 </div>`;
         });
     }
@@ -472,7 +486,7 @@
         const fav = favorites[idx];
         document.getElementById('stopDesc').value = fav.desc;
         document.getElementById('stopLoc').value = fav.loc;
-        document.getElementById('favDropdown').value = ""; // Clear selection placeholder
+        document.getElementById('favDropdown').value = ""; 
     }
 
     function captureTime(fieldId) {
