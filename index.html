@@ -379,34 +379,33 @@
 
     let favorites = [];
 
-   // Master compiled reference dataset with precise full street addresses
+  // Master compiled reference dataset with precise full street addresses
     const masterFavorites = [
-        { "desc": "• Ace Radiator", "loc": "2202 Broadway, Fort Wayne, IN 46802" },
-        { "desc": "• Blackstone Laboratories", "loc": "2428 Pettit Ave, Fort Wayne, IN 46806" },
-        { "desc": "• CMP (Certified Maint.)", "loc": "4730 Lima Rd, Fort Wayne, IN 46808" },
+        { "desc": "• Ace Radiator", "loc": "2319 W Coliseum Blvd, Fort Wayne, IN 46808" },
+        { "desc": "• Blackstone Laboratories", "loc": "416 E Pettit Ave, Fort Wayne, IN 46806" },
+        { "desc": "• CMP (Certified Maint.)", "loc": "445 Council Dr, Fort Wayne, IN 46825" },
         { "desc": "• Clifford Trucking", "loc": "Fort Wayne, IN" },
-        { "desc": "• Departure from Hub", "loc": "Palmer Trucks Hub" },
-        { "desc": "• FedEx Drop Point", "loc": "Fort Wayne, IN" },
+        { "desc": "• Departure from Hub", "loc": "3535 W Coliseum Blvd, Fort Wayne, IN 46808" },
+        { "desc": "• FedEx Drop Point", "loc": "3620 Independence Dr, Fort Wayne, IN 46808" },
         { "desc": "• H&H Repair", "loc": "1633 Lincoln Highway East, New Haven, IN 46774" },
-        { "desc": "• Hub Turnaround Drop", "loc": "Palmer Trucks Hub" },
-        { "desc": "• Hudson Trucking", "loc": "13149 US-24, New Haven, IN 46774" },
-        { "desc": "• J&B Sales", "loc": "Jericho Road, Ohio" },
+        { "desc": "• Hub Turnaround Drop", "loc": "3535 W Coliseum Blvd, Fort Wayne, IN 46808" },
+        { "desc": "• Hudson Trucking", "loc": "6925 Derek Dr Ste C, Fort Wayne, IN 46803" },
+        { "desc": "• J&B Sales", "loc": "6235 Jericho Rd, Hicksville, OH 43526" },
         { "desc": "• Jerry W. Belling Trucking", "loc": "12609 Indianapolis Rd, Yoder, IN 46798" },
-        { "desc": "• Journey Trucking", "loc": "Fort Wayne, IN" },
-        { "desc": "• Kip's K&N Concrete", "loc": "5502 Mason Dr, Fort Wayne, IN 46809" },
+        { "desc": "• Journey Trucking", "loc": "4077 Kraft Pkwy, Fort Wayne, IN 46808" },
+        { "desc": "• Hipskind Concrete", "loc": "5502 Mason Dr, Fort Wayne, IN 46809" },
         { "desc": "• Lois & Jay Yoder", "loc": "11436 Rosedale Rd, Hicksville, OH 43526" },
         { "desc": "• McMahon's Best One Tire", "loc": "6921 State Road 930, Fort Wayne, IN 46803" },
-        { "desc": "• Palmer Leasing Group", "loc": "2936 Production Rd, Fort Wayne, IN 46808" },
-        { "desc": "• Parker Hannifin (Goshen)", "loc": "3701 Goshen Rd, Fort Wayne, IN 46818" },
-        { "desc": "• Parker Hannifin (Opp)", "loc": "2200 Opportunity Dr, Fort Wayne, IN 46825" },
+        { "desc": "• Palmer Leasing Group", "loc": "2121 Production Rd, Fort Wayne, IN 46808" },
+        { "desc": "• Parker Hannifin (Goshen)", "loc": "2650 Congressional Pkwy, Fort Wayne, IN 468088" },
         { "desc": "• Penske Truck Rental", "loc": "3602 Lima Rd, Fort Wayne, IN 46805" },
-        { "desc": "• Polar King International", "loc": "4410 New Haven Ave, Fort Wayne, IN 46803" },
-        { "desc": "• Return to Palmer Trucks", "loc": "Palmer Trucks Hub" },
-        { "desc": "• Riley Line", "loc": "7020 Ardmore Ave, Fort Wayne, IN 46809" },
-        { "desc": "• Ruble Truck Sales", "loc": "13422 US-30, Monroeville, IN 46773" },
-        { "desc": "• Selking International", "loc": "2801 Goshen Rd, Fort Wayne, IN 46818" },
-        { "desc": "• Stoops Freightliner", "loc": "10129 Grand Lake Rd, New Haven, IN 46774" },
-        { "desc": "• Valley Trucks", "loc": "North Side, Fort Wayne, IN" }
+        { "desc": "• Polar King International", "loc": "4424 New Haven Ave, Fort Wayne, IN 46803" },
+        { "desc": "• Return to Palmer Trucks", "loc": "3535 W Coliseum Blvd, Fort Wayne, IN 46808" },
+        { "desc": "• Riley Trucking", "loc": "7020 Ardmore Ave, Fort Wayne, IN 46809" },
+        { "desc": "• Ruble Truck Sales", "loc": "11995 Dechell Dr, New Haven, IN 46774" },
+        { "desc": "• Selking International", "loc": "2807 Goshen Rd, Fort Wayne, IN 46808" },
+        { "desc": "• Stoops Freightliner", "loc": "12247 Declaration Dr, New Haven, IN 46774" },
+        { "desc": "• Valley Trucks", "loc": "2226 Research Dr, Fort Wayne, IN 46808" }
     ];
     document.getElementById('shiftDate').value = state.date;
 
