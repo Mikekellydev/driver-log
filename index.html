@@ -288,10 +288,13 @@
             <button class="btn btn-warning" id="toggleFavDrawer" style="padding: 10px; font-size: 0.85rem;">⭐️ Edit Favs</button>
         </div>
 
-        <!-- Favorites Editor Drawer (Hidden by default) -->
+        <!-- Favorites Editor Drawer -->
         <div id="favDrawer" class="favorites-drawer">
             <h4 style="font-size:0.85rem; color:var(--navy-dark); margin-bottom:5px;">Add Current Form to Favorites:</h4>
-            <button class="btn btn-success" style="padding:6px; font-size:0.8rem; margin-bottom:10px;" onclick="saveCurrentAsFavorite()">Save Current Inputs as Favorite</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px;">
+                <button class="btn btn-success" style="padding:6px; font-size:0.8rem;" onclick="saveCurrentAsFavorite()">Save Form Inputs</button>
+                <button class="btn btn-danger" style="padding:6px; font-size:0.8rem; background:#64748B;" onclick="forceResetFavorites()">Reset to Master List</button>
+            </div>
             <div id="favManageList" style="max-height:150px; overflow-y:auto; font-size:0.75rem;"></div>
         </div>
         
@@ -376,6 +379,36 @@
 
     let favorites = [];
 
+    // Master compiled reference dataset from both driver logs
+    const masterFavorites = [
+        { "desc": "• Ace Radiator", "loc": "Local" },
+        { "desc": "• Blackstone Laboratories", "loc": "Pettit Avenue" },
+        { "desc": "• CMP (Certified Maint.)", "loc": "Lima Rd (by Costco)" },
+        { "desc": "• Clifford Trucking", "loc": "Local Fleet" },
+        { "desc": "• Departure from Hub", "loc": "Hub" },
+        { "desc": "• FedEx Drop Point", "loc": "Local Drop" },
+        { "desc": "• H&H Repair", "loc": "1633 Lincoln Highway East" },
+        { "desc": "• Hub Turnaround Drop", "loc": "Hub" },
+        { "desc": "• Hudson Trucking", "loc": "New Haven" },
+        { "desc": "• J&B Sales", "loc": "Jericho Road, Ohio" },
+        { "desc": "• Jerry W. Belling Trucking", "loc": "12609 Indianapolis Road" },
+        { "desc": "• Journey Trucking", "loc": "Local Delivery" },
+        { "desc": "• Kip's K&N Concrete", "loc": "5502 Mason Drive" },
+        { "desc": "• Lois & Jay Yoder", "loc": "11436 Rosedale Road" },
+        { "desc": "• McMahon's Best One Tire", "loc": "6921 State Road 930" },
+        { "desc": "• Palmer Leasing Group", "loc": "Production Road" },
+        { "desc": "• Parker Hannifin", "loc": "Goshen Road" },
+        { "desc": "• Parker Hannifin", "loc": "Opportunity Drive" },
+        { "desc": "• Penske", "loc": "3602 Lima Road" },
+        { "desc": "• Polar King", "loc": "4410 New Haven Avenue" },
+        { "desc": "• Return to Palmer Trucks", "loc": "Hub" },
+        { "desc": "• Riley", "loc": "7020 Ardmore Avenue" },
+        { "desc": "• Ruble Truck Sales", "loc": "Monroeville (\"The Mall\")" },
+        { "desc": "• Selking International", "loc": "Goshen Road" },
+        { "desc": "• Stoops Freightliner", "loc": "New Haven Junction" },
+        { "desc": "• Valley Trucks", "loc": "North Side" }
+    ];
+
     document.getElementById('shiftDate').value = state.date;
 
     function loadState() {
@@ -399,41 +432,26 @@
         const savedFavs = localStorage.getItem('palmer_driver_favorites');
         if (savedFavs) {
             favorites = JSON.parse(savedFavs);
+            // Self-healing check: If user's browser cache has fewer than 10 entries, auto-upgrade it to the full master list.
+            if (favorites.length < 10) {
+                favorites = [...masterFavorites];
+                localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
+            }
         } else {
-            // Merged and complete favorites compiled from both July 9th and July 10th shift manifests
-            favorites = [
-              { "desc": "• Ace Radiator", "loc": "Local" },
-              { "desc": "• Blackstone Laboratories", "loc": "Pettit Avenue" },
-              { "desc": "• CMP (Certified Maint.)", "loc": "Lima Rd (by Costco)" },
-              { "desc": "• Clifford Trucking", "loc": "Local Fleet" },
-              { "desc": "• Departure from Hub", "loc": "Hub" },
-              { "desc": "• FedEx Drop Point", "loc": "Local Drop" },
-              { "desc": "• H&H Repair", "loc": "1633 Lincoln Highway East" },
-              { "desc": "• Hub Turnaround Drop", "loc": "Hub" },
-              { "desc": "• Hudson Trucking", "loc": "New Haven" },
-              { "desc": "• J&B Sales", "loc": "Jericho Road, Ohio" },
-              { "desc": "• Jerry W. Belling Trucking", "loc": "12609 Indianapolis Road" },
-              { "desc": "• Journey Trucking", "loc": "Local Delivery" },
-              { "desc": "• Kip's K&N Concrete", "loc": "5502 Mason Drive" },
-              { "desc": "• Lois & Jay Yoder", "loc": "11436 Rosedale Road" },
-              { "desc": "• McMahon's Best One Tire", "loc": "6921 State Road 930" },
-              { "desc": "• Palmer Leasing Group", "loc": "Production Road" },
-              { "desc": "• Parker Hannifin", "loc": "Goshen Road" },
-              { "desc": "• Parker Hannifin", "loc": "Opportunity Drive" },
-              { "desc": "• Penske", "loc": "3602 Lima Road" },
-              { "desc": "• Polar King", "loc": "4410 New Haven Avenue" },
-              { "desc": "• Return to Palmer Trucks", "loc": "Hub" },
-              { "desc": "• Riley", "loc": "7020 Ardmore Avenue" },
-              { "desc": "• Ruble Truck Sales", "loc": "Monroeville (\"The Mall\")" },
-              { "desc": "• Selking International", "loc": "Goshen Road" },
-              { "desc": "• Stoops Freightliner", "loc": "New Haven Junction" },
-              { "desc": "• Valley Trucks", "loc": "North Side" }
-            ];
+            favorites = [...masterFavorites];
             localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
         }
 
         updateUI();
         updateFavoritesUI();
+    }
+
+    function forceResetFavorites() {
+        if(confirm("Reset back to the master list containing all 26 stops from both days?")) {
+            favorites = [...masterFavorites];
+            localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
+            updateFavoritesUI();
+        }
     }
 
     function saveState() {
@@ -469,6 +487,9 @@
         
         const manageList = document.getElementById('favManageList');
         manageList.innerHTML = '';
+
+        // Sort favorites alphabetically by description for ease of use
+        favorites.sort((a, b) => a.desc.localeCompare(b.desc));
 
         favorites.forEach((fav, idx) => {
             let option = document.createElement('option');
