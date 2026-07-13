@@ -298,11 +298,11 @@
             <div id="favManageList" style="max-height:150px; overflow-y:auto; font-size:0.75rem;"></div>
         </div>
         
-       <label>Stop Description</label>
-<input type="text" id="stopDesc" placeholder="Input client name">
-        
-<label>Location / Address</label>
-<input type="text" id="stopLoc" placeholder="Client address">
+        <label>Stop Description</label>
+        <input type="text" id="stopDesc" placeholder="Input client name">
+                
+        <label>Location / Address</label>
+        <input type="text" id="stopLoc" placeholder="Client address">
 
         <div class="grid-2">
             <div class="time-btn-group">
@@ -332,7 +332,10 @@
 
     <!-- Live Preview Display Lists -->
     <div class="card">
-        <h2>Planned / Pending Stops (Use arrows to reorder)</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h2 style="margin-bottom: 0;">Planned / Pending Stops</h2>
+            <button class="btn" id="btnMapEntireRun" style="background: var(--maps-blue); padding: 6px 12px; font-size: 0.8rem; width: auto;">🗺️ Map Entire Run</button>
+        </div>
         <div id="plannedStopsList"></div>
     </div>
 
@@ -361,7 +364,7 @@
             </div>
         </div>
         <div class="action-grid">
-            <button class="btn btn-success" id="btnExportCSV">📊 Export to CSV</button>
+            <button class="btn btn-success" id="btnExportCSV">📊 Export to Excel</button>
             <button class="btn btn-danger" id="btnClearData" style="padding:12px 5px;">🧹 Clear Day</button>
         </div>
     </div>
@@ -379,7 +382,7 @@
 
     let favorites = [];
 
-  // Master compiled reference dataset with precise full street addresses
+    // Master compiled reference dataset with precise full street addresses
     const masterFavorites = [
         { "desc": "• Ace Radiator", "loc": "2319 W Coliseum Blvd, Fort Wayne, IN 46808" },
         { "desc": "• Blackstone Laboratories", "loc": "416 E Pettit Ave, Fort Wayne, IN 46806" },
@@ -430,8 +433,9 @@
         const savedFavs = localStorage.getItem('palmer_driver_favorites');
         if (savedFavs) {
             favorites = JSON.parse(savedFavs);
-            // Self-healing check: If user's browser cache has fewer than 10 entries, auto-upgrade it to the full master list.
-            if (favorites.length < 10) {
+            
+            // FORCE UPDATE: If any item in cache uses old addresses, overwrite it with the master list
+            if (favorites.some(f => f.loc === "Local Fleet" || f.loc === "Hub")) {
                 favorites = [...masterFavorites];
                 localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
             }
@@ -657,6 +661,35 @@
         updateUI();
     });
 
+    document.getElementById('btnMapEntireRun').addEventListener('click', () => {
+        const currentRunStops = state.plannedStops.filter(stop => stop.runNumber === state.activeRun);
+        
+        if (currentRunStops.length === 0) {
+            return alert("No planned stops found for the current run to map!");
+        }
+
+        let routeWaypoints = ["Palmer Trucks Fort Wayne IN"];
+
+        currentRunStops.forEach(stop => {
+            if (stop.location && stop.location !== "—") {
+                if (!stop.location.toLowerCase().includes("fort wayne") && !stop.location.toLowerCase().includes("hub")) {
+                    routeWaypoints.push(`${stop.location} Fort Wayne IN`);
+                } else if (stop.location.toLowerCase().includes("hub")) {
+                    routeWaypoints.push("Palmer Trucks Fort Wayne IN");
+                } else {
+                    routeWaypoints.push(stop.location);
+                }
+            }
+        });
+
+        routeWaypoints.push("Palmer Trucks Fort Wayne IN");
+
+        const encodedWaypoints = routeWaypoints.map(addr => encodeURIComponent(addr.trim())).join('/');
+        const masterRouteUrl = `https://www.google.com/maps/dir/${encodedWaypoints}`;
+
+        window.open(masterRouteUrl, '_blank');
+    });
+
     function clearForm() {
         document.getElementById('stopDesc').value = '';
         document.getElementById('stopLoc').value = '';
@@ -681,155 +714,136 @@
     });
 
     document.getElementById('btnExportCSV').addEventListener('click', () => {
-    if (state.completedStops.length === 0) return alert("No active log entries to export yet.");
-    
-    const rawDate = document.getElementById('shiftDate').value;
-    const vStatus = document.getElementById('vehicleStatus').value;
-    const pStatus = document.getElementById('paperworkStatus').value;
-
-    const dateObj = new Date(rawDate + 'T00:00:00');
-    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-
-    let uniqueRuns = [...new Set(state.completedStops.map(s => s.runNumber))].sort((a,b)=>a-b);
-    let totalStopsCount = 0;
-
-    // Build the stylized HTML payload that Excel automatically reads and renders beautifully
-    let html = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-    <head>
-        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Driver Report</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
-        <style>
-            body { font-family: 'Segoe UI', Arial, sans-serif; }
-            td { vertical-align: middle; font-size: 10pt; padding: 6px; border: 0.5pt solid #CBD5E1; }
-            .title-hdr { background-color: #1B365D; color: #FFFFFF; font-size: 14pt; font-weight: bold; text-align: center; border: none; }
-            .meta-lbl { font-weight: bold; color: #475569; background-color: #F8FAFC; }
-            .meta-val { color: #1E293B; }
-            .table-hdr { background-color: #1B365D; color: #FFFFFF; font-weight: bold; text-align: center; font-size: 11pt; }
-            .run-divider { background-color: #E2E8F0; color: #1B365D; font-weight: bold; font-size: 11pt; }
-            .summary-title { background-color: #475569; color: #FFFFFF; font-weight: bold; font-size: 12pt; text-align: center; }
-            .summary-hdr { background-color: #F1F5F9; font-weight: bold; color: #334155; text-align: center; }
-            .center-txt { text-align: center; }
-        </style>
-    </head>
-    <body>
-        <table>
-            <!-- Column Width Definitions for Excel -->
-            <colgroup>
-                <col width="280">
-                <col width="320">
-                <col width="140">
-                <col width="140">
-                <col width="320">
-            </colgroup>
-
-            <!-- Corporate Top Banner Header -->
-            <tr>
-                <td colspan="5" class="title-hdr" height="40">DAILY DRIVER REPORT — PALMER TRUCKS</td>
-            </tr>
-            
-            <!-- Metadata Rows -->
-            <tr>
-                <td class="meta-lbl">To:</td>
-                <td class="meta-val">Parts Manager</td>
-                <td class="meta-lbl">Date:</td>
-                <td colspan="2" class="meta-val">${formattedDate}</td>
-            </tr>
-            <tr>
-                <td class="meta-lbl">From:</td>
-                <td class="meta-val">Michael Kelly (Delivery Driver)</td>
-                <td class="meta-lbl">Status:</td>
-                <td colspan="2" class="meta-val" style="color: #10B981; font-weight: bold;">Completed</td>
-            </tr>
-            
-            <!-- Blank Separator Row -->
-            <tr><td colspan="5" style="border:none;" height="15"></td></tr>
-
-            <!-- Core Log Table Headings -->
-            <tr>
-                <td class="table-hdr" height="28">Run / Stop Description</td>
-                <td class="table-hdr">Location / Address</td>
-                <td class="table-hdr">Arrival / Action</td>
-                <td class="table-hdr">Departure Time</td>
-                <td class="table-hdr">Route / Operational Notes</td>
-            </tr>`;
-
-    // Populate log sections sorted neatly by Run Numbers
-    uniqueRuns.forEach(runNum => {
-        const stopsInRun = state.completedStops.filter(s => s.runNumber === runNum);
+        if (state.completedStops.length === 0) return alert("No active log entries to export yet.");
         
-        // Dynamic Run Layout Section Bars
-        html += `
-            <tr>
-                <td colspan="5" class="run-divider" height="24">🏁 Run ${runNum} Block Layout</td>
-            </tr>`;
+        const rawDate = document.getElementById('shiftDate').value;
+        const vStatus = document.getElementById('vehicleStatus').value;
+        const pStatus = document.getElementById('paperworkStatus').value;
 
-        stopsInRun.forEach(s => {
-            totalStopsCount++;
+        const dateObj = new Date(rawDate + 'T00:00:00');
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+        let uniqueRuns = [...new Set(state.completedStops.map(s => s.runNumber))].sort((a,b)=>a-b);
+        let totalStopsCount = 0;
+
+        let html = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Driver Report</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; }
+                td { vertical-align: middle; font-size: 10pt; padding: 6px; border: 0.5pt solid #CBD5E1; }
+                .title-hdr { background-color: #1B365D; color: #FFFFFF; font-size: 14pt; font-weight: bold; text-align: center; border: none; }
+                .meta-lbl { font-weight: bold; color: #475569; background-color: #F8FAFC; }
+                .meta-val { color: #1E293B; }
+                .table-hdr { background-color: #1B365D; color: #FFFFFF; font-weight: bold; text-align: center; font-size: 11pt; }
+                .run-divider { background-color: #E2E8F0; color: #1B365D; font-weight: bold; font-size: 11pt; }
+                .summary-title { background-color: #475569; color: #FFFFFF; font-weight: bold; font-size: 12pt; text-align: center; }
+                .summary-hdr { background-color: #F1F5F9; font-weight: bold; color: #334155; text-align: center; }
+                .center-txt { text-align: center; }
+            </style>
+        </head>
+        <body>
+            <table>
+                <colgroup>
+                    <col width="280">
+                    <col width="320">
+                    <col width="140">
+                    <col width="140">
+                    <col width="320">
+                </colgroup>
+                <tr>
+                    <td colspan="5" class="title-hdr" height="40">DAILY DRIVER REPORT — PALMER TRUCKS</td>
+                </tr>
+                <tr>
+                    <td class="meta-lbl">To:</td>
+                    <td class="meta-val">Parts Manager</td>
+                    <td class="meta-lbl">Date:</td>
+                    <td colspan="2" class="meta-val">${formattedDate}</td>
+                </tr>
+                <tr>
+                    <td class="meta-lbl">From:</td>
+                    <td class="meta-val">Michael Kelly (Delivery Driver)</td>
+                    <td class="meta-lbl">Status:</td>
+                    <td colspan="2" class="meta-val" style="color: #10B981; font-weight: bold;">Completed</td>
+                </tr>
+                <tr><td colspan="5" style="border:none;" height="15"></td></tr>
+                <tr>
+                    <td class="table-hdr" height="28">Run / Stop Description</td>
+                    <td class="table-hdr">Location / Address</td>
+                    <td class="table-hdr">Arrival / Action</td>
+                    <td class="table-hdr">Departure Time</td>
+                    <td class="table-hdr">Route / Operational Notes</td>
+                </tr>`;
+
+        uniqueRuns.forEach(runNum => {
+            const stopsInRun = state.completedStops.filter(s => s.runNumber === runNum);
             html += `
                 <tr>
-                    <td>${escapeHTML(s.description)}</td>
-                    <td>${escapeHTML(s.location || "—")}</td>
-                    <td class="center-txt">${escapeHTML(s.arrival || "—")}</td>
-                    <td class="center-txt">${escapeHTML(s.departure || "—")}</td>
-                    <td>${escapeHTML(s.notes || "Conducted routinely")}</td>
+                    <td colspan="5" class="run-divider" height="24">🏁 Run ${runNum} Block Layout</td>
                 </tr>`;
+
+            stopsInRun.forEach(s => {
+                totalStopsCount++;
+                html += `
+                    <tr>
+                        <td>${escapeHTML(s.description)}</td>
+                        <td>${escapeHTML(s.location || "—")}</td>
+                        <td class="center-txt">${escapeHTML(s.arrival || "—")}</td>
+                        <td class="center-txt">${escapeHTML(s.departure || "—")}</td>
+                        <td>${escapeHTML(s.notes || "Conducted routinely")}</td>
+                    </tr>`;
+            });
         });
+
+        html += `<tr><td colspan="5" style="border:none;" height="20"></td></tr>`;
+        html += `
+                <tr>
+                    <td colspan="5" class="summary-title" height="26">📋 Daily Wrap-Up Summary</td>
+                </tr>
+                <tr>
+                    <td class="summary-hdr">Total Runs</td>
+                    <td class="summary-hdr">Total Stops Completed</td>
+                    <td class="summary-hdr">Vehicle Status</td>
+                    <td colspan="2" class="summary-hdr">Paperwork Status</td>
+                </tr>
+                <tr>
+                    <td class="center-txt" style="font-weight:bold;">${uniqueRuns.length}</td>
+                    <td class="center-txt" style="font-weight:bold;">${totalStopsCount}</td>
+                    <td class="center-txt" style="font-weight:bold; color:${vStatus === 'Ready' ? '#10B981' : '#EF4444'};">${vStatus}</td>
+                    <td colspan="2" class="center-txt" style="font-weight:bold;">${pStatus}</td>
+                </tr>
+            </table>
+        </body>
+        </html>`;
+
+        const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${rawDate}_Daily_Driver_Report_Palmer_Trucks.xls`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     });
 
-    // Blank Separator Row
-    html += `<tr><td colspan="5" style="border:none;" height="20"></td></tr>`;
+    function escapeHTML(text) {
+        if (!text) return "";
+        return text.toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 
-    // End of Day Wrap-Up Summary Grid Layout
-    html += `
-            <tr>
-                <td colspan="5" class="summary-title" height="26">📋 Daily Wrap-Up Summary</td>
-            </tr>
-            <tr>
-                <td class="summary-hdr">Total Runs</td>
-                <td class="summary-hdr">Total Stops Completed</td>
-                <td class="summary-hdr">Vehicle Status</td>
-                <td colspan="2" class="summary-hdr">Paperwork Status</td>
-            </tr>
-            <tr>
-                <td class="center-txt" style="font-weight:bold;">${uniqueRuns.length}</td>
-                <td class="center-txt" style="font-weight:bold;">${totalStopsCount}</td>
-                <td class="center-txt" style="font-weight:bold; color:${vStatus === 'Ready' ? '#10B981' : '#EF4444'};">${vStatus}</td>
-                <td colspan="2" class="center-txt" style="font-weight:bold;">${pStatus}</td>
-            </tr>
-        </table>
-    </body>
-    </html>`;
+    window.addEventListener('DOMContentLoaded', loadState);
 
-    // Trigger immediate stylized spreadsheet streaming download
-    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${rawDate}_Daily_Driver_Report_Palmer_Trucks.xls`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-});
-
-// Clean script tool helper to prevent breaking special characters in table layouts
-function escapeHTML(text) {
-    if (!text) return "";
-    return text.toString()
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-// Global page initialization and structural listeners
-window.addEventListener('DOMContentLoaded', loadState);
-
-document.getElementById('shiftDate').addEventListener('change', (e) => {
-    state.date = e.target.value;
-    saveState();
-});
+    document.getElementById('shiftDate').addEventListener('change', (e) => {
+        state.date = e.target.value;
+        saveState();
+    });
 </script>
 
 </body>
