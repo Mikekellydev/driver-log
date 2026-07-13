@@ -261,16 +261,15 @@
             </div>
             <div>
                 <label>Active Run Number</label>
-                <div id="activeRunDisplay" class="btn" style="background:var(--navy-light); color:var(--navy-dark); cursor:default; padding:9px;">1</div>
+                <div style="display: flex; gap: 4px;">
+                    <button class="btn btn-secondary" id="btnPrevRun" style="padding: 9px; font-size: 1rem; width: 40px;">−</button>
+                    <div id="activeRunDisplay" class="btn" style="background:var(--navy-light); color:var(--navy-dark); cursor:default; padding:9px; flex-grow: 1;">1</div>
+                    <button class="btn btn-secondary" id="btnNextRun" style="padding: 9px; font-size: 1rem; width: 40px;">+</button>
+                </div>
             </div>
         </div>
-        <div class="grid-2" style="margin-top: 5px;">
-            <div>
-                <button class="btn btn-secondary" id="btnEndRun">🔒 End Run</button>
-            </div>
-            <div>
-                <button class="btn" id="btnNewRun">➕ New Run</button>
-            </div>
+        <div style="margin-top: 5px;">
+            <button class="btn btn-secondary" id="btnEndRun">🔒 End Active Run Summary</button>
         </div>
     </div>
 
@@ -433,8 +432,6 @@
         const savedFavs = localStorage.getItem('palmer_driver_favorites');
         if (savedFavs) {
             favorites = JSON.parse(savedFavs);
-            
-            // FORCE UPDATE: If any item in cache uses old addresses, overwrite it with the master list
             if (favorites.some(f => f.loc === "Local Fleet" || f.loc === "Hub")) {
                 favorites = [...masterFavorites];
                 localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
@@ -490,7 +487,6 @@
         const manageList = document.getElementById('favManageList');
         manageList.innerHTML = '';
 
-        // Sort favorites alphabetically by description for ease of use
         favorites.sort((a, b) => a.desc.localeCompare(b.desc));
 
         favorites.forEach((fav, idx) => {
@@ -655,7 +651,17 @@
         saveState();
     });
 
-    document.getElementById('btnNewRun').addEventListener('click', () => {
+    // Step down a run number (Safely clips off at Run 1)
+    document.getElementById('btnPrevRun').addEventListener('click', () => {
+        if (state.activeRun > 1) {
+            state.activeRun -= 1;
+            saveState();
+            updateUI();
+        }
+    });
+
+    // Step up a run number
+    document.getElementById('btnNextRun').addEventListener('click', () => {
         state.activeRun += 1;
         saveState();
         updateUI();
@@ -663,13 +669,11 @@
 
     document.getElementById('btnMapEntireRun').addEventListener('click', () => {
         const currentRunStops = state.plannedStops.filter(stop => stop.runNumber === state.activeRun);
-        
         if (currentRunStops.length === 0) {
             return alert("No planned stops found for the current run to map!");
         }
 
         let routeWaypoints = ["Palmer Trucks Fort Wayne IN"];
-
         currentRunStops.forEach(stop => {
             if (stop.location && stop.location !== "—") {
                 if (!stop.location.toLowerCase().includes("fort wayne") && !stop.location.toLowerCase().includes("hub")) {
@@ -681,12 +685,10 @@
                 }
             }
         });
-
         routeWaypoints.push("Palmer Trucks Fort Wayne IN");
 
         const encodedWaypoints = routeWaypoints.map(addr => encodeURIComponent(addr.trim())).join('/');
         const masterRouteUrl = `https://www.google.com/maps/dir/${encodedWaypoints}`;
-
         window.open(masterRouteUrl, '_blank');
     });
 
