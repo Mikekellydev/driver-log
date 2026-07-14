@@ -331,9 +331,12 @@
 
     <!-- Live Preview Display Lists -->
     <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
             <h2 style="margin-bottom: 0;">Planned / Pending Stops</h2>
-            <button class="btn" id="btnMapEntireRun" style="background: var(--maps-blue); padding: 6px 12px; font-size: 0.8rem; width: auto;">🗺️ Map Entire Run</button>
+            <div style="display: flex; gap: 4px;">
+                <button class="btn" id="btnLoadRoutine" style="background: var(--warning); padding: 6px 10px; font-size: 0.8rem; width: auto;">☀️ Load Morning Routine</button>
+                <button class="btn" id="btnMapEntireRun" style="background: var(--maps-blue); padding: 6px 10px; font-size: 0.8rem; width: auto;">🗺️ Map Entire Run</button>
+            </div>
         </div>
         <div id="plannedStopsList"></div>
     </div>
@@ -341,6 +344,12 @@
     <div class="card">
         <h2>Completed Shift Log Table</h2>
         <div id="completedStopsList"></div>
+    </div>
+
+    <!-- Notes for Tomorrow Scratchpad -->
+    <div class="card" style="border: 1px solid var(--warning);">
+        <h2>📝 Notes & Reminders for Tomorrow</h2>
+        <textarea id="tomorrowNotes" rows="3" placeholder="Type hot items, notes, or tasks to remember for tomorrow morning here..." style="margin-bottom:0;" oninput="saveTomorrowNotes()"></textarea>
     </div>
 
     <!-- Final Wrap-up Controls -->
@@ -381,12 +390,13 @@
 
     let favorites = [];
 
-    // Master compiled reference dataset with precise full street addresses
+    // Master compiled reference dataset
     const masterFavorites = [
         { "desc": "• Ace Radiator", "loc": "2319 W Coliseum Blvd, Fort Wayne, IN 46808" },
         { "desc": "• Blackstone Laboratories", "loc": "416 E Pettit Ave, Fort Wayne, IN 46806" },
         { "desc": "• CMP (Certified Maint.)", "loc": "445 Council Dr, Fort Wayne, IN 46825" },
         { "desc": "• Clifford Trucking", "loc": "Fort Wayne, IN" },
+        { "desc": "• Cummins (New Haven)", "loc": "New Haven, IN" },
         { "desc": "• Departure from Hub", "loc": "3535 W Coliseum Blvd, Fort Wayne, IN 46808" },
         { "desc": "• FedEx Drop Point", "loc": "3620 Independence Dr, Fort Wayne, IN 46808" },
         { "desc": "• H&H Repair", "loc": "1633 Lincoln Highway East, New Haven, IN 46774" },
@@ -421,32 +431,47 @@
             } else {
                 if(confirm("New work day detected. Clear previous records for a fresh start?")) {
                     clearDay();
+                    injectMorningRoutineStops();
                 } else {
                     state = parsed;
                     state.date = new Date().toISOString().split('T')[0];
                     document.getElementById('shiftDate').value = state.date;
                 }
             }
+        } else {
+            // First time opening app ever
+            injectMorningRoutineStops();
         }
 
         const savedFavs = localStorage.getItem('palmer_driver_favorites');
         if (savedFavs) {
             favorites = JSON.parse(savedFavs);
-            if (favorites.some(f => f.loc === "Local Fleet" || f.loc === "Hub")) {
-                favorites = [...masterFavorites];
-                localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
-            }
         } else {
             favorites = [...masterFavorites];
             localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
+        }
+
+        // Load tomorrow's reminders text box
+        const savedNotes = localStorage.getItem('palmer_tomorrow_notes');
+        if (savedNotes) {
+            document.getElementById('tomorrowNotes').value = savedNotes;
         }
 
         updateUI();
         updateFavoritesUI();
     }
 
+    function injectMorningRoutineStops() {
+        state.plannedStops.push(
+            { runNumber: state.activeRun, description: "• Departure from Hub", location: "3535 W Coliseum Blvd, Fort Wayne, IN 46808" },
+            { runNumber: state.activeRun, description: "• Cummins (New Haven)", location: "New Haven, IN" },
+            { runNumber: state.activeRun, description: "• Return to Palmer Trucks", location: "3535 W Coliseum Blvd, Fort Wayne, IN 46808" }
+        );
+        saveState();
+    }
+
     function forceResetFavorites() {
-        if(confirm("Reset back to the master list containing all 26 stops from both days?")) {
+        if(confirm("Reset back to the master list containing all stops?")) {
             favorites = [...masterFavorites];
             localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
             updateFavoritesUI();
@@ -455,6 +480,11 @@
 
     function saveState() {
         localStorage.setItem('palmer_driver_log_state', JSON.stringify(state));
+    }
+
+    function saveTomorrowNotes() {
+        const val = document.getElementById('tomorrowNotes').value;
+        localStorage.setItem('palmer_tomorrow_notes', val);
     }
 
     document.getElementById('toggleFavDrawer').addEventListener('click', () => {
@@ -651,7 +681,7 @@
         saveState();
     });
 
-    // Step down a run number (Safely clips off at Run 1)
+    // Step down a run number
     document.getElementById('btnPrevRun').addEventListener('click', () => {
         if (state.activeRun > 1) {
             state.activeRun -= 1;
@@ -665,6 +695,18 @@
         state.activeRun += 1;
         saveState();
         updateUI();
+    });
+
+    // Manual load morning routine layout injector button
+    document.getElementById('btnLoadRoutine').addEventListener('click', () => {
+        state.plannedStops.push(
+            { runNumber: state.activeRun, description: "• Departure from Hub", location: "3535 W Coliseum Blvd, Fort Wayne, IN 46808" },
+            { runNumber: state.activeRun, description: "• Cummins (New Haven)", location: "New Haven, IN" },
+            { runNumber: state.activeRun, description: "• Return to Palmer Trucks", location: "3535 W Coliseum Blvd, Fort Wayne, IN 46808" }
+        );
+        saveState();
+        updateUI();
+        alert(`Morning Cummins loop appended directly into Active Run ${state.activeRun}!`);
     });
 
     document.getElementById('btnMapEntireRun').addEventListener('click', () => {
@@ -710,7 +752,7 @@
     }
 
     document.getElementById('btnClearData').addEventListener('click', () => {
-        if(confirm("Are you sure you want to completely erase today's tracking data?")) {
+        if(confirm("Are you sure you want to completely erase today's tracking data? (Reminders box will not be deleted)")) {
             clearDay();
         }
     });
