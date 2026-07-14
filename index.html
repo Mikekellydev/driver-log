@@ -396,7 +396,7 @@
         { "desc": "• Blackstone Laboratories", "loc": "416 E Pettit Ave, Fort Wayne, IN 46806" },
         { "desc": "• CMP (Certified Maint.)", "loc": "445 Council Dr, Fort Wayne, IN 46825" },
         { "desc": "• Clifford Trucking", "loc": "Fort Wayne, IN" },
-        { "desc": "• Cummins (New Haven)", "loc": "New Haven, IN" },
+        { "desc": "• Cummins (New Haven)", "loc": "2092 Summit Street, New Haven, Indiana, 46774" },
         { "desc": "• Departure from Hub", "loc": "3535 W Coliseum Blvd, Fort Wayne, IN 46808" },
         { "desc": "• FedEx Drop Point", "loc": "3620 Independence Dr, Fort Wayne, IN 46808" },
         { "desc": "• H&H Repair", "loc": "1633 Lincoln Highway East, New Haven, IN 46774" },
@@ -439,19 +439,22 @@
                 }
             }
         } else {
-            // First time opening app ever
             injectMorningRoutineStops();
         }
 
         const savedFavs = localStorage.getItem('palmer_driver_favorites');
         if (savedFavs) {
             favorites = JSON.parse(savedFavs);
+            let cumminsFav = favorites.find(f => f.desc.includes("Cummins (New Haven)"));
+            if (cumminsFav && cumminsFav.loc === "New Haven, IN") {
+                cumminsFav.loc = "2092 Summit Street, New Haven, Indiana, 46774";
+                localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
+            }
         } else {
             favorites = [...masterFavorites];
             localStorage.setItem('palmer_driver_favorites', JSON.stringify(favorites));
         }
 
-        // Load tomorrow's reminders text box
         const savedNotes = localStorage.getItem('palmer_tomorrow_notes');
         if (savedNotes) {
             document.getElementById('tomorrowNotes').value = savedNotes;
@@ -464,7 +467,7 @@
     function injectMorningRoutineStops() {
         state.plannedStops.push(
             { runNumber: state.activeRun, description: "• Departure from Hub", location: "3535 W Coliseum Blvd, Fort Wayne, IN 46808" },
-            { runNumber: state.activeRun, description: "• Cummins (New Haven)", location: "New Haven, IN" },
+            { runNumber: state.activeRun, description: "• Cummins (New Haven)", location: "2092 Summit Street, New Haven, Indiana, 46774" },
             { runNumber: state.activeRun, description: "• Return to Palmer Trucks", location: "3535 W Coliseum Blvd, Fort Wayne, IN 46808" }
         );
         saveState();
@@ -681,7 +684,6 @@
         saveState();
     });
 
-    // Step down a run number
     document.getElementById('btnPrevRun').addEventListener('click', () => {
         if (state.activeRun > 1) {
             state.activeRun -= 1;
@@ -690,18 +692,16 @@
         }
     });
 
-    // Step up a run number
     document.getElementById('btnNextRun').addEventListener('click', () => {
         state.activeRun += 1;
         saveState();
         updateUI();
     });
 
-    // Manual load morning routine layout injector button
     document.getElementById('btnLoadRoutine').addEventListener('click', () => {
         state.plannedStops.push(
             { runNumber: state.activeRun, description: "• Departure from Hub", location: "3535 W Coliseum Blvd, Fort Wayne, IN 46808" },
-            { runNumber: state.activeRun, description: "• Cummins (New Haven)", location: "New Haven, IN" },
+            { runNumber: state.activeRun, description: "• Cummins (New Haven)", location: "2092 Summit Street, New Haven, Indiana, 46774" },
             { runNumber: state.activeRun, description: "• Return to Palmer Trucks", location: "3535 W Coliseum Blvd, Fort Wayne, IN 46808" }
         );
         saveState();
